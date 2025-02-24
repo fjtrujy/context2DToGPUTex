@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "Context2DToGPUTex",
-    platforms: [.iOS(.v16), .macCatalyst(.v16), .macOS(.v14)],
+    platforms: [.macOS(.v12)],
     products: [
         .executable(name: "Context2DToGPUTex", targets: ["Context2DToGPUTex"]),
     ],
