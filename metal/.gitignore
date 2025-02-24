@@ -1,0 +1,46 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+.DS_Store
+/.build
+/Packages
+xcuserdata/
+DerivedData/
+.swiftpm
+.netrc
+
+# Files generated when generating wasm bundle with our build scripts
+src/wasm/.binary
+Bundle
+artifacts
+checkouts
+debug.yaml
+manifest.db
+repositories
+wasm32-unknown-wasi
+workspace-state.json
+artifacts/
+/Toolchains
+.sourcekit-lsp/
