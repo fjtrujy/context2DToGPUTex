@@ -28,6 +28,23 @@ class Renderer {
     private let windowFrame: CGRect
     private let refreshInterval: TimeInterval
     
+    private lazy var gpuTexture: MTLTexture = {
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .bgra8Unorm,
+            width: Int(windowFrame.width),
+            height: Int(windowFrame.height),
+            mipmapped: false
+        )
+        
+        descriptor.storageMode = .shared
+        descriptor.usage = [.shaderRead]
+
+        return device.makeTexture(descriptor: descriptor)!
+    }()
+    private lazy var contentLength: Int = Int(windowFrame.width * windowFrame.height) * MemoryLayout<UInt32>.stride
+    
+    private lazy var gpuTextureBuffer: MTLBuffer = device.makeBuffer(length: contentLength)!
+    
     init(
         windowFrame: CGRect,
         refreshInterval: TimeInterval
@@ -71,23 +88,46 @@ private extension Renderer {
     
     func drawFrame() {
         let drawable = metalView.nextDrawable
-        let commandBuffer = commandQueue.makeCommandBuffer()
+        let commandBuffer = commandQueue.makeCommandBuffer()!
         let renderPassDescriptor = MTLRenderPassDescriptor()
 
         renderPassDescriptor.colorAttachments[0].texture = drawable.texture
         renderPassDescriptor.colorAttachments[0].loadAction = .clear
         renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1.0, 0.0, 0.0, 1.0)
         renderPassDescriptor.colorAttachments[0].storeAction = .store
+        
+        // Copy from CGContext to GPUTexture
+        let encoder = commandBuffer.makeBlitCommandEncoder()!
+        gpuTextureBuffer.contents().copyMemory(from: cpuContext.data!, byteCount: contentLength)
+        let sourceSize = MTLSize(
+            width: Int(windowFrame.width),
+            height: Int(windowFrame.height),
+            depth: 1
+        )
+        let destinationOrigin = MTLOrigin(x: 0, y: 0, z: 0)
+        encoder.copy(
+            from: gpuTextureBuffer,
+            sourceOffset: 0,
+            sourceBytesPerRow: Int(windowFrame.width) * MemoryLayout<UInt32>.stride,
+            sourceBytesPerImage: 0,
+            sourceSize: sourceSize,
+            to: gpuTexture,
+            destinationSlice: 0,
+            destinationLevel: 0,
+            destinationOrigin: destinationOrigin
+        )
+        encoder.endEncoding()
+//        commandBuffer.commit()
+//
+//        if let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
+//            // Add Metal drawing commands here
+//            renderEncoder.endEncoding()
+//        }
 
-        if let renderEncoder = commandBuffer?.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
-            // Add Metal drawing commands here
-            renderEncoder.endEncoding()
+        commandBuffer.addCompletedHandler { _ in
+            print("Finished GPU rendering")
         }
-
-        commandBuffer?.present(drawable)
-        commandBuffer?.commit()
+        commandBuffer.present(drawable)
+        commandBuffer.commit()
     }
-
-    
-    
 }
