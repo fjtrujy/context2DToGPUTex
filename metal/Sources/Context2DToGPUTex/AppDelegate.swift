@@ -29,7 +29,7 @@ extension AppDelegate: NSApplicationDelegate {
         guard let screen = window.screen ?? NSScreen.main else { fatalError()}
         let renderer = Renderer(
             windowFrame: Constants.windowsFrame,
-            refreshInterval: screen.maximumRefreshInterval
+            refreshInterval: screen.minimumRefreshInterval
         )
         
         window.contentView = renderer.metalView

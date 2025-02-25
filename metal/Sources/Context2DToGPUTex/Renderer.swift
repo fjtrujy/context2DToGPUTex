@@ -67,11 +67,12 @@ class Renderer {
     }
     
     func startRenderingLoop() {
+        print("refreshInterval \(refreshInterval)")
         Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] _ in
             guard let self else { return }
             self.fillCPUContextRandomColor()
             self.drawFrame()
-            print(Date().timeIntervalSince1970)
+//            print(Date().timeIntervalSince1970)
         }
     }
 }
@@ -132,7 +133,7 @@ private extension Renderer {
         )
         encoder.endEncoding()
         commandBuffer.addCompletedHandler { _ in
-            print("Finished GPU rendering")
+//            print("Finished GPU rendering")
         }
         
         let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
@@ -145,5 +146,6 @@ private extension Renderer {
         renderEncoder.endEncoding()
         commandBuffer.present(drawable)
         commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
     }
 }
