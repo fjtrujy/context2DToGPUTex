@@ -46,7 +46,7 @@ class Renderer {
     private lazy var gpuTextureBuffer: MTLBuffer = device.makeBuffer(length: contentLength)!
     
     private lazy var texturedShader: MTLRenderPipelineState = {
-        let library = device.makeDefaultLibrary()!
+        let library = try! device.makeDefaultLibrary(bundle: .module)
         let vertexFunction = library.makeFunction(name: "vertex_main")
         let fragmentFunction = library.makeFunction(name: "fragment_main")
         
@@ -57,14 +57,6 @@ class Renderer {
 
         return try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }()
-    
-    private lazy var vertices: [Float] = [
-        // Positions        // Texture Coordinates
-        -1.0,  1.0, 0.0,    0.0, 0.0, // Top-left
-        -1.0, -1.0, 0.0,    0.0, 1.0, // Bottom-left
-         1.0,  1.0, 0.0,    1.0, 0.0, // Top-right
-         1.0, -1.0, 0.0,    1.0, 1.0  // Bottom-right
-    ]
     
     init(
         windowFrame: CGRect,
@@ -116,8 +108,7 @@ private extension Renderer {
         renderPassDescriptor.colorAttachments[0].loadAction = .clear
         renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1.0, 0.0, 0.0, 1.0)
         renderPassDescriptor.colorAttachments[0].storeAction = .store
-        
-        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
+
         
         // Copy from CGContext to GPUTexture
         let encoder = commandBuffer.makeBlitCommandEncoder()!
@@ -143,9 +134,9 @@ private extension Renderer {
         commandBuffer.addCompletedHandler { _ in
             print("Finished GPU rendering")
         }
-
+        
+        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
         renderEncoder.setRenderPipelineState(texturedShader)
-        renderEncoder.setVertexBytes(vertices, length: vertices.count * MemoryLayout<Float>.size, index: 0)
         renderEncoder.setFragmentTexture(gpuTexture, index: 0)
 
         // Draw using a triangle strip

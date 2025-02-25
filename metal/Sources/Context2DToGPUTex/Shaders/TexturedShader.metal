@@ -1,9 +1,18 @@
 #include <metal_stdlib>
 using namespace metal;
 
-struct VertexIn {
-    float4 position [[attribute(0)]];
-    float2 texCoord [[attribute(1)]];
+constant const float2 vertices[4] = {
+    float2(-1.0,  1.0),
+    float2(-1.0, -1.0),
+    float2(1.0,  1.0),
+    float2(1.0, -1.0),
+};
+
+constant const float2 uvs[4] = {
+    float2(0.0, 0.0),
+    float2(0.0, 1.0),
+    float2(1.0, 0.0),
+    float2(1.0, 1.0),
 };
 
 struct VertexOut {
@@ -11,10 +20,10 @@ struct VertexOut {
     float2 texCoord;
 };
 
-vertex VertexOut vertex_main(VertexIn in [[stage_in]]) {
+vertex VertexOut vertex_main(const ushort vid [[ vertex_id ]]) {
     VertexOut out;
-    out.position = in.position;
-    out.texCoord = in.texCoord;
+    out.position = float4(vertices[vid], 0.0f, 1.0f);
+    out.texCoord = uvs[vid];
     return out;
 }
 

@@ -10,6 +10,9 @@ let package = Package(
         .executable(name: "Context2DToGPUTex", targets: ["Context2DToGPUTex"]),
     ],
     targets: [
-        .executableTarget(name: "Context2DToGPUTex"),
+        .executableTarget(
+            name: "Context2DToGPUTex",
+            resources: [.process("Shaders")]
+        ),
     ]
 )
