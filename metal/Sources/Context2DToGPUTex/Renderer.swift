@@ -45,6 +45,19 @@ class Renderer {
     
     private lazy var gpuTextureBuffer: MTLBuffer = device.makeBuffer(length: contentLength)!
     
+    private lazy var texturedShader: MTLRenderPipelineState = {
+        let library = device.makeDefaultLibrary()!
+        let vertexFunction = library.makeFunction(name: "vertex_main")
+        let fragmentFunction = library.makeFunction(name: "fragment_main")
+        
+        let pipelineDescriptor = MTLRenderPipelineDescriptor()
+        pipelineDescriptor.vertexFunction = vertexFunction
+        pipelineDescriptor.fragmentFunction = fragmentFunction
+        pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
+
+        return try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+    }()
+    
     init(
         windowFrame: CGRect,
         refreshInterval: TimeInterval
@@ -96,6 +109,8 @@ private extension Renderer {
         renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1.0, 0.0, 0.0, 1.0)
         renderPassDescriptor.colorAttachments[0].storeAction = .store
         
+        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
+        
         // Copy from CGContext to GPUTexture
         let encoder = commandBuffer.makeBlitCommandEncoder()!
         gpuTextureBuffer.contents().copyMemory(from: cpuContext.data!, byteCount: contentLength)
@@ -117,16 +132,13 @@ private extension Renderer {
             destinationOrigin: destinationOrigin
         )
         encoder.endEncoding()
-//        commandBuffer.commit()
-//
-//        if let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
-//            // Add Metal drawing commands here
-//            renderEncoder.endEncoding()
-//        }
-
         commandBuffer.addCompletedHandler { _ in
             print("Finished GPU rendering")
         }
+
+        renderEncoder.setRenderPipelineState(texturedShader)
+
+        renderEncoder.endEncoding()
         commandBuffer.present(drawable)
         commandBuffer.commit()
     }
