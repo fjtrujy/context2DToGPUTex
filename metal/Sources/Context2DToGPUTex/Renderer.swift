@@ -36,7 +36,7 @@ class Renderer {
             mipmapped: false
         )
         
-        descriptor.storageMode = .shared
+        descriptor.storageMode = .managed
         descriptor.usage = [.shaderRead]
 
         return device.makeTexture(descriptor: descriptor)!
