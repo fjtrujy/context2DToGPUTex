@@ -58,6 +58,14 @@ class Renderer {
         return try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }()
     
+    private lazy var vertices: [Float] = [
+        // Positions        // Texture Coordinates
+        -1.0,  1.0, 0.0,    0.0, 0.0, // Top-left
+        -1.0, -1.0, 0.0,    0.0, 1.0, // Bottom-left
+         1.0,  1.0, 0.0,    1.0, 0.0, // Top-right
+         1.0, -1.0, 0.0,    1.0, 1.0  // Bottom-right
+    ]
+    
     init(
         windowFrame: CGRect,
         refreshInterval: TimeInterval
@@ -137,6 +145,11 @@ private extension Renderer {
         }
 
         renderEncoder.setRenderPipelineState(texturedShader)
+        renderEncoder.setVertexBytes(vertices, length: vertices.count * MemoryLayout<Float>.size, index: 0)
+        renderEncoder.setFragmentTexture(gpuTexture, index: 0)
+
+        // Draw using a triangle strip
+        renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
 
         renderEncoder.endEncoding()
         commandBuffer.present(drawable)
