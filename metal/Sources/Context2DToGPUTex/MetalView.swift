@@ -10,6 +10,7 @@ class MetalView: NSView {
     }
     private let config: Config
     private(set) var metalLayer: CAMetalLayer!
+    var nextDrawable: CAMetalDrawable { metalLayer.nextDrawable()! }
     
     init(config: Config) {
         self.config = config
