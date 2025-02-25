@@ -2,10 +2,6 @@ import Foundation
 import AppKit
 import Metal
 
-private enum Constants {
-    static let copySize: CGSize = .init(width: 4096, height: 4096)
-}
-
 class Renderer {
     private lazy var cpuContext = CGContext(
         data: nil,
@@ -59,26 +55,44 @@ class Renderer {
         return try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }()
     
+    private let getCurrentTime: () -> TimeInterval
+    private let onFPSUpdate: (Double) -> Void
     private let windowFrame: CGRect
     private let copySize: CGSize
     private let refreshInterval: TimeInterval
     
+    private var lastTick: TimeInterval = .zero
+    
     init(
+        getCurrentTime: @escaping () -> TimeInterval = { Double(clock_gettime_nsec_np(CLOCK_UPTIME_RAW)) / 1_000_000_000} ,
+        onFPSUpdate: @escaping (Double) -> Void,
         windowFrame: CGRect,
         copySize: CGSize,
         refreshInterval: TimeInterval
     ) {
+        self.getCurrentTime = getCurrentTime
+        self.onFPSUpdate = onFPSUpdate
         self.windowFrame = windowFrame
         self.copySize = copySize
         self.refreshInterval = refreshInterval
     }
     
     func startRenderingLoop() {
+        self.lastTick = self.getCurrentTime()
         print("refreshInterval \(refreshInterval)")
-        Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] timer in
+        Timer.scheduledTimer(
+            withTimeInterval: refreshInterval,
+            repeats: true
+        ) { [weak self] timer in
             guard let self else { return }
+            let currentTick = self.getCurrentTime()
             self.fillCPUContextRandomColor()
             self.drawFrame()
+            
+            let frameTook = currentTick - self.lastTick
+            let fps = (1.0/frameTook).rounded()
+            self.lastTick = currentTick
+            self.onFPSUpdate(fps)
         }
     }
 }
@@ -103,8 +117,30 @@ private extension Renderer {
         cpuContext.drawPath(using: .fill)
         
         cpuContext.setFillColor(textColor)
-        let attrString = NSAttributedString(string: "Hello, World!")
-        attrString.draw(in: cgContextRect)
+        
+        let attrString = NSAttributedString(
+            string: "Hello, World!",
+            attributes: [
+                .font: NSFont.systemFont(ofSize: 10),
+                .foregroundColor: NSColor(cgColor: textColor)!
+                ]
+        )
+        let textStorage = NSTextStorage(attributedString: attrString)
+        let textContainer = NSTextContainer(size: CGSize(width: copySize.width, height: CGFloat.greatestFiniteMagnitude))
+        textContainer.lineFragmentPadding = 0
+        let layoutManager = NSLayoutManager()
+        layoutManager.addTextContainer(textContainer)
+        textStorage.addLayoutManager(layoutManager)
+        let glyphRange = layoutManager.glyphRange(for: textContainer)
+        
+        
+        let at = NSPoint(x: copySize.width / 4, y: copySize.height / 3)
+        NSGraphicsContext.saveGraphicsState()
+        let nsgc = NSGraphicsContext(cgContext: cpuContext, flipped: true)
+        NSGraphicsContext.current = nsgc
+        layoutManager.drawBackground(forGlyphRange: glyphRange, at: at)
+        layoutManager.drawGlyphs(forGlyphRange: glyphRange, at: at)
+        NSGraphicsContext.restoreGraphicsState()
     }
     
     func drawFrame() {

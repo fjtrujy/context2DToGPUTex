@@ -18,7 +18,6 @@ final class AppDelegate: NSObject {
 
 extension AppDelegate: NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        
         let window = NSWindow(
             contentRect: Constants.windowsFrame,
             styleMask: [.closable, .miniaturizable, .titled],
@@ -28,7 +27,14 @@ extension AppDelegate: NSApplicationDelegate {
         
         let sharedApp = NSApplication.shared
         guard let screen = window.screen ?? NSScreen.main else { fatalError()}
+        
+        let onFPSUpdate: (Double) -> Void = { fps in
+            print("===> FPS \(fps)")
+            window.title = "Context2DtoGPUTex \(fps) FPS"
+        }
+        
         let renderer = Renderer(
+            onFPSUpdate: onFPSUpdate,
             windowFrame: Constants.windowsFrame,
             copySize: Constants.copySize,
             refreshInterval: screen.minimumRefreshInterval
