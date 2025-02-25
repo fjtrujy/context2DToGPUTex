@@ -2,13 +2,17 @@ import Foundation
 import AppKit
 import Metal
 
+private enum Constants {
+    static let copySize: CGSize = .init(width: 4096, height: 4096)
+}
+
 class Renderer {
     private lazy var cpuContext = CGContext(
         data: nil,
-        width: Int(windowFrame.width),
-        height: Int(windowFrame.height),
+        width: Int(copySize.width),
+        height: Int(copySize.height),
         bitsPerComponent: 8,
-        bytesPerRow: Int(windowFrame.width) * MemoryLayout<UInt32>.stride,
+        bytesPerRow: Int(copySize.width) * MemoryLayout<UInt32>.stride,
         space: CGColorSpace(name: CGColorSpace.sRGB)!,
         bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGImageByteOrderInfo.order32Little.rawValue
     )!
@@ -25,14 +29,11 @@ class Renderer {
         return MetalView(config: metalViewConfig)
     }()
     
-    private let windowFrame: CGRect
-    private let refreshInterval: TimeInterval
-    
     private lazy var gpuTexture: MTLTexture = {
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(
             pixelFormat: .bgra8Unorm,
-            width: Int(windowFrame.width),
-            height: Int(windowFrame.height),
+            width: Int(copySize.width),
+            height: Int(copySize.height),
             mipmapped: false
         )
         
@@ -41,7 +42,7 @@ class Renderer {
 
         return device.makeTexture(descriptor: descriptor)!
     }()
-    private lazy var contentLength: Int = Int(windowFrame.width * windowFrame.height) * MemoryLayout<UInt32>.stride
+    private lazy var contentLength: Int = Int(copySize.width * copySize.height) * MemoryLayout<UInt32>.stride
     
     private lazy var gpuTextureBuffer: MTLBuffer = device.makeBuffer(length: contentLength)!
     
@@ -58,21 +59,26 @@ class Renderer {
         return try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }()
     
+    private let windowFrame: CGRect
+    private let copySize: CGSize
+    private let refreshInterval: TimeInterval
+    
     init(
         windowFrame: CGRect,
+        copySize: CGSize,
         refreshInterval: TimeInterval
     ) {
         self.windowFrame = windowFrame
+        self.copySize = copySize
         self.refreshInterval = refreshInterval
     }
     
     func startRenderingLoop() {
         print("refreshInterval \(refreshInterval)")
-        Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] _ in
+        Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] timer in
             guard let self else { return }
             self.fillCPUContextRandomColor()
             self.drawFrame()
-//            print(Date().timeIntervalSince1970)
         }
     }
 }
@@ -85,9 +91,10 @@ private extension Renderer {
         let bgColor = CGColor(red: red, green: green, blue: blue, alpha: 1)
         let textColor = CGColor(red: 1.0 - red, green: 1.0 - green, blue: 1.0 - blue, alpha: 1)
         
+        let cgContextRect = CGRect(origin: .zero, size: copySize)
         cpuContext.setFillColor(bgColor)
         let rect = CGPath(
-            rect: windowFrame,
+            rect: cgContextRect,
             transform: nil
         )
 
@@ -97,7 +104,7 @@ private extension Renderer {
         
         cpuContext.setFillColor(textColor)
         let attrString = NSAttributedString(string: "Hello, World!")
-        attrString.draw(in: windowFrame)
+        attrString.draw(in: cgContextRect)
     }
     
     func drawFrame() {
@@ -115,15 +122,15 @@ private extension Renderer {
         let encoder = commandBuffer.makeBlitCommandEncoder()!
         gpuTextureBuffer.contents().copyMemory(from: cpuContext.data!, byteCount: contentLength)
         let sourceSize = MTLSize(
-            width: Int(windowFrame.width),
-            height: Int(windowFrame.height),
+            width: Int(copySize.width),
+            height: Int(copySize.height),
             depth: 1
         )
         let destinationOrigin = MTLOrigin(x: 0, y: 0, z: 0)
         encoder.copy(
             from: gpuTextureBuffer,
             sourceOffset: 0,
-            sourceBytesPerRow: Int(windowFrame.width) * MemoryLayout<UInt32>.stride,
+            sourceBytesPerRow: Int(copySize.width) * MemoryLayout<UInt32>.stride,
             sourceBytesPerImage: 0,
             sourceSize: sourceSize,
             to: gpuTexture,
@@ -132,9 +139,6 @@ private extension Renderer {
             destinationOrigin: destinationOrigin
         )
         encoder.endEncoding()
-        commandBuffer.addCompletedHandler { _ in
-//            print("Finished GPU rendering")
-        }
         
         let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
         renderEncoder.setRenderPipelineState(texturedShader)
@@ -146,6 +150,5 @@ private extension Renderer {
         renderEncoder.endEncoding()
         commandBuffer.present(drawable)
         commandBuffer.commit()
-        commandBuffer.waitUntilCompleted()
     }
 }

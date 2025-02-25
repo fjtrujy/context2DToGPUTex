@@ -2,6 +2,7 @@ import Foundation
 import AppKit
 
 private enum Constants {
+    static let copySize = CGSize(width: 4096, height: 4096)
     static let windowSize = CGSize(width: 800, height: 600)
     static let windowsFrame = CGRect(origin: .zero, size: windowSize)
 }
@@ -29,6 +30,7 @@ extension AppDelegate: NSApplicationDelegate {
         guard let screen = window.screen ?? NSScreen.main else { fatalError()}
         let renderer = Renderer(
             windowFrame: Constants.windowsFrame,
+            copySize: Constants.copySize,
             refreshInterval: screen.minimumRefreshInterval
         )
         
