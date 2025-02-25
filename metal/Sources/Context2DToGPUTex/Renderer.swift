@@ -3,15 +3,17 @@ import AppKit
 import Metal
 
 class Renderer {
-    private lazy var cpuContext = CGContext(
-        data: nil,
-        width: Int(copySize.width),
-        height: Int(copySize.height),
-        bitsPerComponent: 8,
-        bytesPerRow: Int(copySize.width) * MemoryLayout<UInt32>.stride,
-        space: CGColorSpace(name: CGColorSpace.sRGB)!,
-        bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGImageByteOrderInfo.order32Little.rawValue
-    )!
+    private lazy var cpuContext: CGContext = {
+        CGContext(
+            data: cgContextFromBuffer ? gpuTextureBuffer.contents() : nil,
+            width: Int(copySize.width),
+            height: Int(copySize.height),
+            bitsPerComponent: 8,
+            bytesPerRow: Int(copySize.width) * MemoryLayout<UInt32>.stride,
+            space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGImageByteOrderInfo.order32Little.rawValue
+        )!
+    }()
     private lazy var device = MTLCreateSystemDefaultDevice()!
     private lazy var commandQueue: MTLCommandQueue = {
         self.device.makeCommandQueue()!
@@ -57,6 +59,7 @@ class Renderer {
     
     private let getCurrentTime: () -> TimeInterval
     private let onFPSUpdate: (Double) -> Void
+    private let cgContextFromBuffer: Bool
     private let windowFrame: CGRect
     private let copySize: CGSize
     private let refreshInterval: TimeInterval
@@ -66,12 +69,14 @@ class Renderer {
     init(
         getCurrentTime: @escaping () -> TimeInterval = { Double(clock_gettime_nsec_np(CLOCK_UPTIME_RAW)) / 1_000_000_000} ,
         onFPSUpdate: @escaping (Double) -> Void,
+        cgContextFromBuffer: Bool,
         windowFrame: CGRect,
         copySize: CGSize,
         refreshInterval: TimeInterval
     ) {
         self.getCurrentTime = getCurrentTime
         self.onFPSUpdate = onFPSUpdate
+        self.cgContextFromBuffer = cgContextFromBuffer
         self.windowFrame = windowFrame
         self.copySize = copySize
         self.refreshInterval = refreshInterval
@@ -156,7 +161,9 @@ private extension Renderer {
         
         // Copy from CGContext to GPUTexture
         let encoder = commandBuffer.makeBlitCommandEncoder()!
-        gpuTextureBuffer.contents().copyMemory(from: cpuContext.data!, byteCount: contentLength)
+        if !cgContextFromBuffer {
+            gpuTextureBuffer.contents().copyMemory(from: cpuContext.data!, byteCount: contentLength)
+        }
         let sourceSize = MTLSize(
             width: Int(copySize.width),
             height: Int(copySize.height),
