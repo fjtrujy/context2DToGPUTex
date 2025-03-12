@@ -2,17 +2,17 @@
 using namespace metal;
 
 //constant const float2 vertices[4] = {
-//    float2(-1.0,  1.0),
 //    float2(-1.0, -1.0),
-//    float2(1.0,  1.0),
+//    float2(-1.0,  1.0),
 //    float2(1.0, -1.0),
+//    float2(1.0,  1.0),
 //};
 
 constant const float2 vertices[4] = {
-    float2(-0.75,  0.75),
     float2(-0.75, -0.75),
-    float2(0.75,  0.75),
-    float2(0.75, -0.75),
+    float2(-0.75,  0.75),
+    float2(0.75,  -0.75),
+    float2(0.75,   0.75),
 };
 
 constant const float2 uvs[4] = {
