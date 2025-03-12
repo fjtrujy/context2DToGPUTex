@@ -9,11 +9,11 @@ const canvas = document.getElementById('glCanvas') as HTMLCanvasElement;
 canvas.width = WINDOW_SIZE.width;
 canvas.height = WINDOW_SIZE.height;
 
-// FPS display element
+// Get UI elements
 const fpsElement = document.getElementById('fps') as HTMLDivElement;
-
-// Toggle button element
 const toggleButton = document.getElementById('toggleButton') as HTMLButtonElement;
+const contextToggle = document.getElementById('contextToggle') as HTMLButtonElement;
+const contextTypeElement = document.getElementById('contextType') as HTMLDivElement;
 
 // Create and start the renderer
 const renderer = new Renderer(canvas, COPY_SIZE, (fps: number) => {
@@ -24,6 +24,13 @@ const renderer = new Renderer(canvas, COPY_SIZE, (fps: number) => {
 toggleButton.addEventListener('click', () => {
     renderer.toggle();
     toggleButton.textContent = renderer.isRendering() ? 'Stop' : 'Start';
+});
+
+// Handle context type toggle
+contextToggle.addEventListener('click', () => {
+    const isOffscreen = renderer.toggleContextType();
+    contextToggle.textContent = isOffscreen ? 'Switch to Canvas2D' : 'Switch to Offscreen';
+    contextTypeElement.textContent = `Context: ${isOffscreen ? 'Offscreen' : 'Canvas2D'}`;
 });
 
 // Start the render loop

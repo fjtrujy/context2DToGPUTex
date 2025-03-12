@@ -1,16 +1,19 @@
 import { vertexShaderSource, fragmentShaderSource } from './shaders';
 
+type Context2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+
 export class Renderer {
     private gl: WebGL2RenderingContext;
     private program: WebGLProgram;
     private texture: WebGLTexture;
-    private canvas2D: HTMLCanvasElement;
-    private ctx2D: CanvasRenderingContext2D;
+    private canvas2D!: HTMLCanvasElement | OffscreenCanvas;
+    private ctx2D!: Context2D;
     private copySize: { width: number; height: number };
     private onFPSUpdate: (fps: number) => void;
     private lastFrameTime: number = 0;
     private isRunning: boolean = false;
     private animationFrameId: number | null = null;
+    private isOffscreen: boolean = false;
 
     constructor(
         canvas: HTMLCanvasElement,
@@ -27,15 +30,8 @@ export class Renderer {
         }
         this.gl = gl;
 
-        // Create and setup the 2D canvas
-        this.canvas2D = document.createElement('canvas');
-        this.canvas2D.width = copySize.width;
-        this.canvas2D.height = copySize.height;
-        const ctx = this.canvas2D.getContext('2d');
-        if (!ctx) {
-            throw new Error('2D context not supported');
-        }
-        this.ctx2D = ctx;
+        // Create and setup the initial Canvas2D context
+        this.setupCanvas2D(false);
 
         // Create and setup the shader program
         this.program = this.createShaderProgram();
@@ -45,6 +41,44 @@ export class Renderer {
 
         // Set viewport
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    }
+
+    private setupCanvas2D(useOffscreen: boolean): void {
+        if (useOffscreen) {
+            const offscreenCanvas = new OffscreenCanvas(this.copySize.width, this.copySize.height);
+            const ctx = offscreenCanvas.getContext('2d');
+            if (!ctx) {
+                throw new Error('Offscreen 2D context not supported');
+            }
+            this.canvas2D = offscreenCanvas;
+            this.ctx2D = ctx;
+        } else {
+            const canvas = document.createElement('canvas');
+            canvas.width = this.copySize.width;
+            canvas.height = this.copySize.height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                throw new Error('2D context not supported');
+            }
+            this.canvas2D = canvas;
+            this.ctx2D = ctx;
+        }
+    }
+
+    public toggleContextType(): boolean {
+        const wasRunning = this.isRunning;
+        if (wasRunning) {
+            this.stop();
+        }
+
+        this.isOffscreen = !this.isOffscreen;
+        this.setupCanvas2D(this.isOffscreen);
+
+        if (wasRunning) {
+            this.start();
+        }
+
+        return this.isOffscreen;
     }
 
     private createShaderProgram(): WebGLProgram {

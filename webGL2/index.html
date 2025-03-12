@@ -29,7 +29,7 @@
         color: white;
         font-family: monospace;
       }
-      #toggleButton {
+      .button {
         padding: 8px 16px;
         font-family: monospace;
         font-size: 14px;
@@ -40,15 +40,22 @@
         cursor: pointer;
         transition: background-color 0.3s;
       }
-      #toggleButton:hover {
+      .button:hover {
         background-color: #c42428;
+      }
+      #contextType {
+        color: white;
+        font-family: monospace;
+        margin-bottom: 5px;
       }
     </style>
   </head>
   <body>
     <div id="controls">
       <div id="fps">FPS: 0</div>
-      <button id="toggleButton">Stop</button>
+      <div id="contextType">Context: Canvas2D</div>
+      <button id="toggleButton" class="button">Stop</button>
+      <button id="contextToggle" class="button">Switch to Offscreen</button>
     </div>
     <canvas id="glCanvas"></canvas>
     <script type="module" src="/src/main.ts"></script>
