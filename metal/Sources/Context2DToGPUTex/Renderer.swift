@@ -44,7 +44,7 @@ class Renderer {
     
     private lazy var gpuTextureBuffer: MTLBuffer = device.makeBuffer(
         length: contentLength,
-        options: .storageModeShared
+        options: .storageModeManaged
     )!
     
     private lazy var texturedShader: MTLRenderPipelineState = {
@@ -128,17 +128,12 @@ fileprivate extension Renderer {
         let bgColor = CGColor(red: red, green: green, blue: blue, alpha: 1)
         let textColor = CGColor(red: 1.0 - red, green: 1.0 - green, blue: 1.0 - blue, alpha: 1)
         
+        // Fill background
         let cgContextRect = CGRect(origin: .zero, size: copySize)
         cpuContext.setFillColor(bgColor)
-        let rect = CGPath(
-            rect: cgContextRect,
-            transform: nil
-        )
-
-        cpuContext.beginPath()
-        cpuContext.addPath(rect)
-        cpuContext.drawPath(using: .fill)
+        cpuContext.fill(cgContextRect)
         
+        // Draw text more efficiently
         cpuContext.setFillColor(textColor)
         
         let attrString = NSAttributedString(
@@ -172,7 +167,9 @@ fileprivate extension Renderer {
         
         // Copy from CGContext to GPUTexture
         if !cgContextFromGPUBuffer {
-            gpuTextureBuffer.contents().copyMemory(from: cpuContext.data!, byteCount: contentLength)
+            let bufferContents = gpuTextureBuffer.contents()
+            bufferContents.copyMemory(from: cpuContext.data!, byteCount: contentLength)
+            gpuTextureBuffer.didModifyRange(0..<contentLength)
         }
         
         if let encoder = commandBuffer.makeBlitCommandEncoder() {
@@ -182,6 +179,7 @@ fileprivate extension Renderer {
                 depth: 1
             )
             let destinationOrigin = MTLOrigin(x: 0, y: 0, z: 0)
+            encoder.synchronize(resource: gpuTextureBuffer) // Ensure CPU writes are visible to GPU
             encoder.copy(
                 from: gpuTextureBuffer,
                 sourceOffset: 0,
@@ -200,7 +198,7 @@ fileprivate extension Renderer {
         renderPassDescriptor.colorAttachments[0].texture = drawable.texture
         renderPassDescriptor.colorAttachments[0].loadAction = .clear
         renderPassDescriptor.colorAttachments[0].storeAction = .store
-        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColor(red: 1.0, green: 0, blue: 0, alpha: 1)
 
         if let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
             renderEncoder.setRenderPipelineState(texturedShader)
