@@ -126,7 +126,7 @@ private extension Renderer {
         let attrString = NSAttributedString(
             string: "Hello, World!",
             attributes: [
-                .font: NSFont.systemFont(ofSize: 10),
+                .font: NSFont.systemFont(ofSize: copySize.width/10),
                 .foregroundColor: NSColor(cgColor: textColor)!
                 ]
         )
