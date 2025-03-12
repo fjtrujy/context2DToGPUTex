@@ -12,10 +12,19 @@ canvas.height = WINDOW_SIZE.height;
 // FPS display element
 const fpsElement = document.getElementById('fps') as HTMLDivElement;
 
+// Toggle button element
+const toggleButton = document.getElementById('toggleButton') as HTMLButtonElement;
+
 // Create and start the renderer
 const renderer = new Renderer(canvas, COPY_SIZE, (fps: number) => {
     fpsElement.textContent = `FPS: ${fps}`;
 });
 
+// Handle toggle button clicks
+toggleButton.addEventListener('click', () => {
+    renderer.toggle();
+    toggleButton.textContent = renderer.isRendering() ? 'Stop' : 'Start';
+});
+
 // Start the render loop
-renderer.drawFrame();
+renderer.start();

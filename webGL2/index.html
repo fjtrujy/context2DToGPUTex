@@ -17,17 +17,39 @@
       canvas {
         background: #000;
       }
-      #fps {
+      #controls {
         position: fixed;
         top: 10px;
         left: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      #fps {
         color: white;
         font-family: monospace;
+      }
+      #toggleButton {
+        padding: 8px 16px;
+        font-family: monospace;
+        font-size: 14px;
+        color: white;
+        background-color: #a41e22;
+        border: 2px solid white;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      #toggleButton:hover {
+        background-color: #c42428;
       }
     </style>
   </head>
   <body>
-    <div id="fps">FPS: 0</div>
+    <div id="controls">
+      <div id="fps">FPS: 0</div>
+      <button id="toggleButton">Stop</button>
+    </div>
     <canvas id="glCanvas"></canvas>
     <script type="module" src="/src/main.ts"></script>
   </body>

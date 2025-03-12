@@ -9,6 +9,8 @@ export class Renderer {
     private copySize: { width: number; height: number };
     private onFPSUpdate: (fps: number) => void;
     private lastFrameTime: number = 0;
+    private isRunning: boolean = false;
+    private animationFrameId: number | null = null;
 
     constructor(
         canvas: HTMLCanvasElement,
@@ -131,7 +133,38 @@ export class Renderer {
         this.lastFrameTime = currentTime;
     }
 
-    public drawFrame(): void {
+    public start(): void {
+        if (!this.isRunning) {
+            this.isRunning = true;
+            this.drawFrame();
+        }
+    }
+
+    public stop(): void {
+        if (this.isRunning) {
+            this.isRunning = false;
+            if (this.animationFrameId !== null) {
+                cancelAnimationFrame(this.animationFrameId);
+                this.animationFrameId = null;
+            }
+        }
+    }
+
+    public toggle(): void {
+        if (this.isRunning) {
+            this.stop();
+        } else {
+            this.start();
+        }
+    }
+
+    public isRendering(): boolean {
+        return this.isRunning;
+    }
+
+    private drawFrame(): void {
+        if (!this.isRunning) return;
+
         // Update 2D canvas content
         this.fillCanvas2DRandomColor();
 
@@ -160,6 +193,6 @@ export class Renderer {
         this.updateFPS();
 
         // Request next frame
-        requestAnimationFrame(() => this.drawFrame());
+        this.animationFrameId = requestAnimationFrame(() => this.drawFrame());
     }
 }
