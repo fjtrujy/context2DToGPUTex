@@ -29,8 +29,9 @@ extension AppDelegate: NSApplicationDelegate {
         guard let screen = window.screen ?? NSScreen.main else { fatalError()}
         
         let onFPSUpdate: (Double) -> Void = { fps in
-            print("===> FPS \(fps)")
-            window.title = "Context2DtoGPUTex \(fps) FPS"
+            DispatchQueue.main.async {
+                window.title = "Context2DtoGPUTex \(fps) FPS"
+            }
         }
         
         let renderer = Renderer(

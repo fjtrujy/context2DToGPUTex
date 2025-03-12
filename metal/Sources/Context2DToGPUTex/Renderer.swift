@@ -57,52 +57,65 @@ class Renderer {
         return try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }()
     
-    private let getCurrentTime: () -> TimeInterval
     private let onFPSUpdate: (Double) -> Void
     private let cgContextFromBuffer: Bool
     private let windowFrame: CGRect
     private let copySize: CGSize
     private let refreshInterval: TimeInterval
+    private let displayLink: CVDisplayLink
     
-    private var lastTick: TimeInterval = .zero
+    private var lastFrameTime: UInt64 = .zero
     
     init(
-        getCurrentTime: @escaping () -> TimeInterval = { Double(clock_gettime_nsec_np(CLOCK_UPTIME_RAW)) / 1_000_000_000} ,
         onFPSUpdate: @escaping (Double) -> Void,
         cgContextFromBuffer: Bool,
         windowFrame: CGRect,
         copySize: CGSize,
         refreshInterval: TimeInterval
     ) {
-        self.getCurrentTime = getCurrentTime
         self.onFPSUpdate = onFPSUpdate
         self.cgContextFromBuffer = cgContextFromBuffer
         self.windowFrame = windowFrame
         self.copySize = copySize
         self.refreshInterval = refreshInterval
+        
+        var displayLink: CVDisplayLink?
+        CVDisplayLinkCreateWithActiveCGDisplays(&displayLink)
+        guard let displayLink else { fatalError("Unable to create CVDisplayLink") }
+        self.displayLink = displayLink
     }
     
     func startRenderingLoop() {
-        self.lastTick = self.getCurrentTime()
-        print("refreshInterval \(refreshInterval)")
-        Timer.scheduledTimer(
-            withTimeInterval: refreshInterval,
-            repeats: true
-        ) { [weak self] timer in
-            guard let self else { return }
-            let currentTick = self.getCurrentTime()
-            self.fillCPUContextRandomColor()
-            self.drawFrame()
+        let displayLinkOutputCallback: CVDisplayLinkOutputCallback = {(
+            displayLink: CVDisplayLink,
+            inNow: UnsafePointer<CVTimeStamp>,
+            inOutputTime: UnsafePointer<CVTimeStamp>,
+            flagsIn: CVOptionFlags,
+            flagsOut: UnsafeMutablePointer<CVOptionFlags>,
+            displayLinkContext: UnsafeMutableRawPointer?
+        ) -> CVReturn in
+            let renderer = unsafeBitCast(displayLinkContext, to: Renderer.self)
             
-            let frameTook = currentTick - self.lastTick
-            let fps = (1.0/frameTook).rounded()
-            self.lastTick = currentTick
-            self.onFPSUpdate(fps)
+            renderer.fillCPUContextRandomColor()
+            renderer.drawFrame()
+            
+            let currentHostTime = inNow.pointee.hostTime
+            let frameDuration = Double(currentHostTime - renderer.lastFrameTime) / Double(NSEC_PER_SEC)
+            let fps = (1.0/frameDuration).rounded()
+            
+            renderer.lastFrameTime = currentHostTime
+            renderer.onFPSUpdate(fps)
+            
+            return kCVReturnSuccess
         }
+        
+        let displayUserInfo = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+        CVDisplayLinkSetOutputCallback(displayLink, displayLinkOutputCallback, displayUserInfo)
+        CVDisplayLinkStart(displayLink)
     }
 }
 
-private extension Renderer {
+fileprivate extension Renderer {
     func fillCPUContextRandomColor() {
         let red: CGFloat = CGFloat.random(in: 0...1)
         let green: CGFloat = CGFloat.random(in: 0...1)
