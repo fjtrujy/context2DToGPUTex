@@ -36,7 +36,7 @@ extension AppDelegate: NSApplicationDelegate {
         
         let renderer = Renderer(
             onFPSUpdate: onFPSUpdate,
-            cgContextFromBuffer: true,
+            cgContextFromGPUBuffer: true,
             windowFrame: Constants.windowsFrame,
             copySize: Constants.copySize,
             refreshInterval: screen.minimumRefreshInterval

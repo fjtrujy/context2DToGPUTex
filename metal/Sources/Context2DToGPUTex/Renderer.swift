@@ -5,7 +5,7 @@ import Metal
 class Renderer {
     private lazy var cpuContext: CGContext = {
         CGContext(
-            data: cgContextFromBuffer ? gpuTextureBuffer.contents() : nil,
+            data: cgContextFromGPUBuffer ? gpuTextureBuffer.contents() : nil,
             width: Int(copySize.width),
             height: Int(copySize.height),
             bitsPerComponent: 8,
@@ -58,7 +58,7 @@ class Renderer {
     }()
     
     private let onFPSUpdate: (Double) -> Void
-    private let cgContextFromBuffer: Bool
+    private let cgContextFromGPUBuffer: Bool
     private let windowFrame: CGRect
     private let copySize: CGSize
     private let refreshInterval: TimeInterval
@@ -68,13 +68,13 @@ class Renderer {
     
     init(
         onFPSUpdate: @escaping (Double) -> Void,
-        cgContextFromBuffer: Bool,
+        cgContextFromGPUBuffer: Bool,
         windowFrame: CGRect,
         copySize: CGSize,
         refreshInterval: TimeInterval
     ) {
         self.onFPSUpdate = onFPSUpdate
-        self.cgContextFromBuffer = cgContextFromBuffer
+        self.cgContextFromGPUBuffer = cgContextFromGPUBuffer
         self.windowFrame = windowFrame
         self.copySize = copySize
         self.refreshInterval = refreshInterval
@@ -174,7 +174,7 @@ fileprivate extension Renderer {
         
         // Copy from CGContext to GPUTexture
         let encoder = commandBuffer.makeBlitCommandEncoder()!
-        if !cgContextFromBuffer {
+        if !cgContextFromGPUBuffer {
             gpuTextureBuffer.contents().copyMemory(from: cpuContext.data!, byteCount: contentLength)
         }
         let sourceSize = MTLSize(
