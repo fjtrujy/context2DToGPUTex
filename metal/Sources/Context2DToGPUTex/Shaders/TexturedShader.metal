@@ -1,19 +1,14 @@
 #include <metal_stdlib>
 using namespace metal;
 
-//constant const float2 vertices[4] = {
-//    float2(-1.0, -1.0),
-//    float2(-1.0,  1.0),
-//    float2(1.0, -1.0),
-//    float2(1.0,  1.0),
-//};
-
 constant const float2 vertices[4] = {
-    float2(-0.75, -0.75),
-    float2(-0.75,  0.75),
-    float2(0.75,  -0.75),
-    float2(0.75,   0.75),
+    float2(-1.0, -1.0),
+    float2(-1.0,  1.0),
+    float2(1.0, -1.0),
+    float2(1.0,  1.0),
 };
+
+constant const float fullScreenPercentage = 0.75;
 
 constant const float2 uvs[4] = {
     float2(0.0, 0.0),
@@ -29,7 +24,7 @@ struct VertexOut {
 
 vertex VertexOut vertex_main(const ushort vid [[ vertex_id ]]) {
     VertexOut out;
-    out.position = float4(vertices[vid], 0.0f, 1.0f);
+    out.position = float4(vertices[vid] * fullScreenPercentage, 0.0f, 1.0f);
     out.texCoord = uvs[vid];
     return out;
 }
