@@ -14,6 +14,7 @@ export class Renderer {
     private isRunning: boolean = false;
     private animationFrameId: number | null = null;
     private isOffscreen: boolean = false;
+    private frameTimestamps: number[] = [];
 
     constructor(
         canvas: HTMLCanvasElement,
@@ -159,11 +160,23 @@ export class Renderer {
 
     private updateFPS(): void {
         const currentTime = performance.now();
-        if (this.lastFrameTime !== 0) {
-            const deltaTime = currentTime - this.lastFrameTime;
-            const fps = Math.round(1000 / deltaTime);
+        
+        // Add current timestamp
+        this.frameTimestamps.push(currentTime);
+        
+        // Remove timestamps older than 1 second
+        const oneSecondAgo = currentTime - 1000;
+        while (this.frameTimestamps[0] < oneSecondAgo) {
+            this.frameTimestamps.shift();
+        }
+        
+        // Calculate average FPS over the last second
+        if (this.frameTimestamps.length > 1) {
+            const timeSpan = this.frameTimestamps[this.frameTimestamps.length - 1] - this.frameTimestamps[0];
+            const fps = Math.round((this.frameTimestamps.length - 1) * 1000 / timeSpan);
             this.onFPSUpdate(fps);
         }
+        
         this.lastFrameTime = currentTime;
     }
 
