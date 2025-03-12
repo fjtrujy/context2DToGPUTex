@@ -31,6 +31,9 @@ class MetalView: NSView {
         let metalLayer = CAMetalLayer()
         metalLayer.device = config.device
         metalLayer.pixelFormat = config.pixelFormat
+        metalLayer.framebufferOnly = true
+        metalLayer.displaySyncEnabled = true
+        metalLayer.maximumDrawableCount = 3
         self.metalLayer = metalLayer
         return metalLayer
     }

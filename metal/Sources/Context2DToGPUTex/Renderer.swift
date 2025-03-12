@@ -35,14 +35,17 @@ class Renderer {
             mipmapped: false
         )
         
-        descriptor.storageMode = .managed
-        descriptor.usage = [.shaderRead]
+        descriptor.storageMode = .private
+        descriptor.usage = [.shaderRead, .pixelFormatView]
 
         return device.makeTexture(descriptor: descriptor)!
     }()
     private lazy var contentLength: Int = Int(copySize.width * copySize.height) * MemoryLayout<UInt32>.stride
     
-    private lazy var gpuTextureBuffer: MTLBuffer = device.makeBuffer(length: contentLength)!
+    private lazy var gpuTextureBuffer: MTLBuffer = device.makeBuffer(
+        length: contentLength,
+        options: .storageModeShared
+    )!
     
     private lazy var texturedShader: MTLRenderPipelineState = {
         let library = try! device.makeDefaultLibrary(bundle: .module)
@@ -99,12 +102,14 @@ class Renderer {
             renderer.fillCPUContextRandomColor()
             renderer.drawFrame()
             
-            let currentHostTime = inNow.pointee.hostTime
-            let frameDuration = Double(currentHostTime - renderer.lastFrameTime) / Double(NSEC_PER_SEC)
-            let fps = (1.0/frameDuration).rounded()
+            let currentTime = inNow.pointee.hostTime
+            if renderer.lastFrameTime != 0 {
+                let frameDuration = Double(currentTime - renderer.lastFrameTime) / Double(CVGetHostClockFrequency())
+                let fps = (1.0/frameDuration).rounded()
+                renderer.onFPSUpdate(fps)
+            }
             
-            renderer.lastFrameTime = currentHostTime
-            renderer.onFPSUpdate(fps)
+            renderer.lastFrameTime = currentTime
             
             return kCVReturnSuccess
         }
@@ -163,47 +168,47 @@ fileprivate extension Renderer {
     
     func drawFrame() {
         let drawable = metalView.nextDrawable
-        let commandBuffer = commandQueue.makeCommandBuffer()!
-        let renderPassDescriptor = MTLRenderPassDescriptor()
-
-        renderPassDescriptor.colorAttachments[0].texture = drawable.texture
-        renderPassDescriptor.colorAttachments[0].loadAction = .clear
-        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1.0, 0.0, 0.0, 1.0)
-        renderPassDescriptor.colorAttachments[0].storeAction = .store
-
+        guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
         
         // Copy from CGContext to GPUTexture
-        let encoder = commandBuffer.makeBlitCommandEncoder()!
         if !cgContextFromGPUBuffer {
             gpuTextureBuffer.contents().copyMemory(from: cpuContext.data!, byteCount: contentLength)
         }
-        let sourceSize = MTLSize(
-            width: Int(copySize.width),
-            height: Int(copySize.height),
-            depth: 1
-        )
-        let destinationOrigin = MTLOrigin(x: 0, y: 0, z: 0)
-        encoder.copy(
-            from: gpuTextureBuffer,
-            sourceOffset: 0,
-            sourceBytesPerRow: Int(copySize.width) * MemoryLayout<UInt32>.stride,
-            sourceBytesPerImage: 0,
-            sourceSize: sourceSize,
-            to: gpuTexture,
-            destinationSlice: 0,
-            destinationLevel: 0,
-            destinationOrigin: destinationOrigin
-        )
-        encoder.endEncoding()
         
-        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
-        renderEncoder.setRenderPipelineState(texturedShader)
-        renderEncoder.setFragmentTexture(gpuTexture, index: 0)
+        if let encoder = commandBuffer.makeBlitCommandEncoder() {
+            let sourceSize = MTLSize(
+                width: Int(copySize.width),
+                height: Int(copySize.height),
+                depth: 1
+            )
+            let destinationOrigin = MTLOrigin(x: 0, y: 0, z: 0)
+            encoder.copy(
+                from: gpuTextureBuffer,
+                sourceOffset: 0,
+                sourceBytesPerRow: Int(copySize.width) * MemoryLayout<UInt32>.stride,
+                sourceBytesPerImage: 0,
+                sourceSize: sourceSize,
+                to: gpuTexture,
+                destinationSlice: 0,
+                destinationLevel: 0,
+                destinationOrigin: destinationOrigin
+            )
+            encoder.endEncoding()
+        }
+        
+        let renderPassDescriptor = MTLRenderPassDescriptor()
+        renderPassDescriptor.colorAttachments[0].texture = drawable.texture
+        renderPassDescriptor.colorAttachments[0].loadAction = .clear
+        renderPassDescriptor.colorAttachments[0].storeAction = .store
+        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
 
-        // Draw using a triangle strip
-        renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
-
-        renderEncoder.endEncoding()
+        if let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
+            renderEncoder.setRenderPipelineState(texturedShader)
+            renderEncoder.setFragmentTexture(gpuTexture, index: 0)
+            renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
+            renderEncoder.endEncoding()
+        }
+        
         commandBuffer.present(drawable)
         commandBuffer.commit()
     }
