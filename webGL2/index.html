@@ -16,21 +16,27 @@
       }
       canvas {
         background: #000;
+        width: 800px;
+        height: 600px;
       }
       #controls {
         position: fixed;
-        top: 10px;
-        left: 10px;
+        top: 5px;
+        left: 5px;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 5px;
+        background-color: rgba(0, 0, 0, 0.7);
+        padding: 5px;
+        border-radius: 4px;
       }
       #fps {
         color: white;
         font-family: monospace;
+        margin: 0;
       }
       .button {
-        padding: 8px 16px;
+        padding: 4px 12px;
         font-family: monospace;
         font-size: 14px;
         color: white;
@@ -46,18 +52,17 @@
       #contextType {
         color: white;
         font-family: monospace;
-        margin-bottom: 5px;
+        margin: 0;
       }
     </style>
   </head>
   <body>
     <div id="controls">
       <div id="fps">FPS: 0</div>
-      <div id="contextType">Context: Canvas2D</div>
+      <div id="contextType">Mode: 2x HTMLCanvas</div>
       <button id="toggleButton" class="button">Stop</button>
-      <button id="contextToggle" class="button">Switch to Offscreen</button>
+      <button id="contextToggle" class="button">Next Mode</button>
     </div>
-    <canvas id="glCanvas"></canvas>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -1,13 +1,8 @@
-import { Renderer } from './Renderer';
+import { Renderer, RenderMode } from './Renderer';
 
 // Constants matching the Metal implementation
 const COPY_SIZE = { width: 4096, height: 4096 };
 const WINDOW_SIZE = { width: 800, height: 600 };
-
-// Get the canvas and resize it
-const canvas = document.getElementById('glCanvas') as HTMLCanvasElement;
-canvas.width = WINDOW_SIZE.width;
-canvas.height = WINDOW_SIZE.height;
 
 // Get UI elements
 const fpsElement = document.getElementById('fps') as HTMLDivElement;
@@ -16,7 +11,7 @@ const contextToggle = document.getElementById('contextToggle') as HTMLButtonElem
 const contextTypeElement = document.getElementById('contextType') as HTMLDivElement;
 
 // Create and start the renderer
-const renderer = new Renderer(canvas, COPY_SIZE, (fps: number) => {
+const renderer = new Renderer(COPY_SIZE, WINDOW_SIZE, (fps: number) => {
     fpsElement.textContent = `FPS: ${fps}`;
 });
 
@@ -26,12 +21,31 @@ toggleButton.addEventListener('click', () => {
     toggleButton.textContent = renderer.isRendering() ? 'Stop' : 'Start';
 });
 
+// Update context type display
+function updateContextDisplay(mode: RenderMode) {
+    let modeName: string;
+    switch (mode) {
+        case RenderMode.TwoCanvas:
+            modeName = 'HTMLCanvas for Context2D and WebGL2';
+            break;
+        case RenderMode.CanvasAndOffscreen:
+            modeName = 'HTMLCanvas for Context2D and OffscreenCanvas for WebGL2';
+            break;
+        case RenderMode.CanvasAndTwoOffscreen:
+            modeName = 'HTMLCanvas for BitmapRenderer and 2x OffscreenCanvas for WebGL2 and Context2D';
+            break;
+    }
+    contextTypeElement.textContent = `Mode: ${modeName}`;
+}
+
 // Handle context type toggle
 contextToggle.addEventListener('click', () => {
-    const isOffscreen = renderer.toggleContextType();
-    contextToggle.textContent = isOffscreen ? 'Switch to Canvas2D' : 'Switch to Offscreen';
-    contextTypeElement.textContent = `Context: ${isOffscreen ? 'Offscreen' : 'Canvas2D'}`;
+    const newMode = renderer.cycleRenderMode();
+    updateContextDisplay(newMode);
 });
+
+// Set initial context display
+updateContextDisplay(renderer.getCurrentMode());
 
 // Start the render loop
 renderer.start();
