@@ -1,9 +1,9 @@
 import { vertexShaderSource, fragmentShaderSource } from './shaders';
 
 export enum RenderMode {
-    TwoCanvas,           // 2 HTMLCanvasElement (WebGL2 visible + Context2D)
+    TwoCanvas, // 2 HTMLCanvasElement (WebGL2 visible + Context2D)
     CanvasAndOffscreen, // 1 HTMLCanvasElement (WebGL2 visible) + 1 OffscreenCanvas (Context2D)
-    CanvasAndTwoOffscreen // 1 HTMLCanvasElement (BitmapRenderer) + 2 OffscreenCanvas (WebGL2 + Context2D)
+    CanvasAndTwoOffscreen, // 1 HTMLCanvasElement (BitmapRenderer) + 2 OffscreenCanvas (WebGL2 + Context2D)
 }
 
 export class Renderer {
@@ -84,7 +84,10 @@ export class Renderer {
             }
             case RenderMode.CanvasAndOffscreen: {
                 // Create Context2D offscreen canvas
-                const offscreenCanvas = new OffscreenCanvas(this.copySize.width, this.copySize.height);
+                const offscreenCanvas = new OffscreenCanvas(
+                    this.copySize.width,
+                    this.copySize.height
+                );
                 const ctx = offscreenCanvas.getContext('2d');
                 if (!ctx) throw new Error('Offscreen 2D context not supported');
                 this.canvas2D = offscreenCanvas;
@@ -98,14 +101,20 @@ export class Renderer {
             }
             case RenderMode.CanvasAndTwoOffscreen: {
                 // Create Context2D offscreen canvas
-                const offscreenCanvas = new OffscreenCanvas(this.copySize.width, this.copySize.height);
+                const offscreenCanvas = new OffscreenCanvas(
+                    this.copySize.width,
+                    this.copySize.height
+                );
                 const ctx = offscreenCanvas.getContext('2d');
                 if (!ctx) throw new Error('Offscreen 2D context not supported');
                 this.canvas2D = offscreenCanvas;
                 this.ctx2D = ctx;
 
                 // Create WebGL2 offscreen canvas with display size
-                const offscreenWebGL = new OffscreenCanvas(this.displaySize.width, this.displaySize.height);
+                const offscreenWebGL = new OffscreenCanvas(
+                    this.displaySize.width,
+                    this.displaySize.height
+                );
                 const gl = offscreenWebGL.getContext('webgl2');
                 if (!gl) throw new Error('WebGL2 not supported in OffscreenCanvas');
                 this.offscreenWebGL = offscreenWebGL;
@@ -148,7 +157,7 @@ export class Renderer {
 
     private updateTexture(): void {
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
-        
+
         // Copy Canvas2D content to WebGL texture
         this.gl.texImage2D(
             this.gl.TEXTURE_2D,
@@ -183,12 +192,12 @@ export class Renderer {
 
         // Update texture and render
         this.updateTexture();
-        
+
         // If using bitmap renderer, transfer the WebGL result
         if (this.renderMode === RenderMode.CanvasAndTwoOffscreen) {
             this.transferToBitmapRenderer();
         }
-        
+
         // Update FPS
         this.updateFPS();
 
@@ -214,23 +223,6 @@ export class Renderer {
                 'Unable to initialize the shader program: ' + this.gl.getProgramInfoLog(program)
             );
         }
-
-        // Create and set up vertex buffer
-        const vertices = new Float32Array([
-            -1.0, -1.0,  // Bottom left
-             1.0, -1.0,  // Bottom right
-            -1.0,  1.0,  // Top left
-             1.0,  1.0   // Top right
-        ]);
-
-        const vertexBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, vertices, this.gl.STATIC_DRAW);
-
-        // Set up vertex attributes
-        const positionAttribLocation = 0; // matches layout(location = 0) in vertex shader
-        this.gl.enableVertexAttribArray(positionAttribLocation);
-        this.gl.vertexAttribPointer(positionAttribLocation, 2, this.gl.FLOAT, false, 0, 0);
 
         return program;
     }
@@ -291,16 +283,16 @@ export class Renderer {
 
     private updateFPS(): void {
         const currentTime = performance.now();
-        
+
         // Add current timestamp
         this.frameTimestamps.push(currentTime);
-        
+
         // Remove timestamps older than 1 second
         const oneSecondAgo = currentTime - 1000;
         while (this.frameTimestamps.length > 0 && this.frameTimestamps[0] < oneSecondAgo) {
             this.frameTimestamps.shift();
         }
-        
+
         // Update FPS display only once per second
         if (currentTime - this.lastFrameTime >= 1000) {
             // Calculate average FPS over the last second
@@ -313,12 +305,12 @@ export class Renderer {
     public start(): void {
         if (!this.isRunning) {
             this.isRunning = true;
-            
+
             // Recreate and setup visible canvas if needed
             if (!document.body.contains(this.visibleCanvas)) {
                 this.visibleCanvas = this.createAndSetupCanvas();
                 document.body.appendChild(this.visibleCanvas);
-                
+
                 // Re-setup the appropriate context
                 if (this.renderMode === RenderMode.CanvasAndTwoOffscreen) {
                     const bitmapRenderer = this.visibleCanvas.getContext('bitmaprenderer');

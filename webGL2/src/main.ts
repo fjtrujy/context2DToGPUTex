@@ -22,7 +22,7 @@ toggleButton.addEventListener('click', () => {
 });
 
 // Update context type display
-function updateContextDisplay(mode: RenderMode) {
+function updateContextDisplay(mode: RenderMode): void {
     let modeName: string;
     switch (mode) {
         case RenderMode.TwoCanvas:
@@ -32,7 +32,8 @@ function updateContextDisplay(mode: RenderMode) {
             modeName = 'HTMLCanvas for Context2D and OffscreenCanvas for WebGL2';
             break;
         case RenderMode.CanvasAndTwoOffscreen:
-            modeName = 'HTMLCanvas for BitmapRenderer and 2x OffscreenCanvas for WebGL2 and Context2D';
+            modeName =
+                'HTMLCanvas for BitmapRenderer and 2x OffscreenCanvas for WebGL2 and Context2D';
             break;
     }
     contextTypeElement.textContent = `Mode: ${modeName}`;

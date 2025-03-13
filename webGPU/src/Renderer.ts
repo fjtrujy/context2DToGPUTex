@@ -1,9 +1,9 @@
 import { vertexShaderSource, fragmentShaderSource } from './shaders';
 
 export enum RenderMode {
-    TwoCanvas,           // 2 HTMLCanvasElement (WebGPU visible + Context2D)
+    TwoCanvas, // 2 HTMLCanvasElement (WebGPU visible + Context2D)
     CanvasAndOffscreen, // 1 HTMLCanvasElement (WebGPU visible) + 1 OffscreenCanvas (Context2D)
-    CanvasAndTwoOffscreen // 1 HTMLCanvasElement (BitmapRenderer) + 2 OffscreenCanvas (WebGPU + Context2D)
+    CanvasAndTwoOffscreen, // 1 HTMLCanvasElement (BitmapRenderer) + 2 OffscreenCanvas (WebGPU + Context2D)
 }
 
 export class Renderer {
@@ -63,9 +63,9 @@ export class Renderer {
         }
 
         this.device = await adapter.requestDevice();
-        
+
         // Configure the canvas
-        const context = canvas.getContext('webgpu');
+        const context = canvas.getContext('webgpu') as GPUCanvasContext;
         if (!context) {
             throw new Error('WebGPU context not available');
         }
@@ -91,16 +91,18 @@ export class Renderer {
                 module: this.device.createShaderModule({
                     code: vertexShaderSource,
                 }),
-                entryPoint: 'main'
+                entryPoint: 'main',
             },
             fragment: {
                 module: this.device.createShaderModule({
                     code: fragmentShaderSource,
                 }),
                 entryPoint: 'main',
-                targets: [{
-                    format: canvasFormat,
-                }],
+                targets: [
+                    {
+                        format: canvasFormat,
+                    },
+                ],
             },
             primitive: {
                 topology: 'triangle-strip',
@@ -111,7 +113,10 @@ export class Renderer {
         this.texture = this.device.createTexture({
             size: [this.copySize.width, this.copySize.height],
             format: 'rgba8unorm',
-            usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+            usage:
+                GPUTextureUsage.TEXTURE_BINDING |
+                GPUTextureUsage.COPY_DST |
+                GPUTextureUsage.RENDER_ATTACHMENT,
         });
         this.textureView = this.texture.createView();
 
@@ -172,7 +177,10 @@ export class Renderer {
             }
             case RenderMode.CanvasAndOffscreen: {
                 // Create Context2D offscreen canvas
-                const offscreenCanvas = new OffscreenCanvas(this.copySize.width, this.copySize.height);
+                const offscreenCanvas = new OffscreenCanvas(
+                    this.copySize.width,
+                    this.copySize.height
+                );
                 const ctx = offscreenCanvas.getContext('2d');
                 if (!ctx) throw new Error('Offscreen 2D context not supported');
                 this.canvas2D = offscreenCanvas;
@@ -184,15 +192,21 @@ export class Renderer {
             }
             case RenderMode.CanvasAndTwoOffscreen: {
                 // Create Context2D offscreen canvas
-                const offscreenCanvas = new OffscreenCanvas(this.copySize.width, this.copySize.height);
+                const offscreenCanvas = new OffscreenCanvas(
+                    this.copySize.width,
+                    this.copySize.height
+                );
                 const ctx = offscreenCanvas.getContext('2d');
                 if (!ctx) throw new Error('Offscreen 2D context not supported');
                 this.canvas2D = offscreenCanvas;
                 this.ctx2D = ctx;
 
                 // Create WebGPU offscreen canvas
-                this.offscreenWebGPU = new OffscreenCanvas(this.displaySize.width, this.displaySize.height);
-                
+                this.offscreenWebGPU = new OffscreenCanvas(
+                    this.displaySize.width,
+                    this.displaySize.height
+                );
+
                 // Setup bitmap renderer on the visible canvas first
                 const bitmapRenderer = this.visibleCanvas.getContext('bitmaprenderer');
                 if (!bitmapRenderer) throw new Error('BitmapRenderer not supported');
@@ -241,12 +255,14 @@ export class Renderer {
         // Create command encoder
         const commandEncoder = this.device.createCommandEncoder();
         const renderPass = commandEncoder.beginRenderPass({
-            colorAttachments: [{
-                view: currentTextureView,
-                clearValue: { r: 1.0, g: 0.0, b: 0.0, a: 1.0 },
-                loadOp: 'clear',
-                storeOp: 'store',
-            }],
+            colorAttachments: [
+                {
+                    view: currentTextureView,
+                    clearValue: { r: 1.0, g: 0.0, b: 0.0, a: 1.0 },
+                    loadOp: 'clear',
+                    storeOp: 'store',
+                },
+            ],
         });
 
         // Draw the quad
@@ -276,12 +292,12 @@ export class Renderer {
 
         // Update texture and render
         this.updateTexture();
-        
+
         // If using bitmap renderer, transfer the WebGPU result
         if (this.renderMode === RenderMode.CanvasAndTwoOffscreen) {
             this.transferToBitmapRenderer();
         }
-        
+
         // Update FPS
         this.updateFPS();
 
@@ -310,16 +326,16 @@ export class Renderer {
 
     private updateFPS(): void {
         const currentTime = performance.now();
-        
+
         // Add current timestamp
         this.frameTimestamps.push(currentTime);
-        
+
         // Remove timestamps older than 1 second
         const oneSecondAgo = currentTime - 1000;
         while (this.frameTimestamps.length > 0 && this.frameTimestamps[0] < oneSecondAgo) {
             this.frameTimestamps.shift();
         }
-        
+
         // Update FPS display only once per second
         if (currentTime - this.lastFrameTime >= 1000) {
             // Calculate average FPS over the last second
@@ -332,19 +348,19 @@ export class Renderer {
     public start(): void {
         if (!this.isRunning) {
             this.isRunning = true;
-            
+
             // Recreate and setup visible canvas if needed
             if (!document.body.contains(this.visibleCanvas)) {
                 this.visibleCanvas = this.createAndSetupCanvas();
                 document.body.appendChild(this.visibleCanvas);
-                
+
                 // Re-setup the appropriate context
                 if (this.renderMode === RenderMode.CanvasAndTwoOffscreen) {
                     const bitmapRenderer = this.visibleCanvas.getContext('bitmaprenderer');
                     if (!bitmapRenderer) throw new Error('BitmapRenderer not supported');
                     this.bitmapRenderer = bitmapRenderer;
                 } else {
-                    this.initializeWebGPU(this.visibleCanvas).catch(error => {
+                    this.initializeWebGPU(this.visibleCanvas).catch((error) => {
                         console.error('Failed to initialize WebGPU:', error);
                         this.stop();
                     });

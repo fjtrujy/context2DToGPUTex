@@ -11,23 +11,24 @@ const contextToggle = document.getElementById('contextToggle') as HTMLButtonElem
 const contextTypeElement = document.getElementById('contextType') as HTMLDivElement;
 
 // Update context type display
-function updateContextDisplay(mode: RenderMode) {
+function updateContextDisplay(mode: RenderMode): void {
     let modeName: string;
     switch (mode) {
         case RenderMode.TwoCanvas:
             modeName = 'HTMLCanvas for Context2D and WebGPU';
             break;
         case RenderMode.CanvasAndOffscreen:
-            modeName = 'HTMLCanvas for Context2D and OffscreenCanvas for WebGPU';
+            modeName = 'HTMLCanvas for WebGPU and OffscreenCanvas for Context2D';
             break;
         case RenderMode.CanvasAndTwoOffscreen:
-            modeName = 'HTMLCanvas for BitmapRenderer and 2x OffscreenCanvas for WebGPU and Context2D';
+            modeName =
+                'HTMLCanvas for BitmapRenderer and 2x OffscreenCanvas for WebGPU and Context2D';
             break;
     }
     contextTypeElement.textContent = `Mode: ${modeName}`;
 }
 
-async function init() {
+async function init(): Promise<void> {
     try {
         // Create and start the renderer
         const renderer = await Renderer.create(COPY_SIZE, WINDOW_SIZE, (fps: number) => {
