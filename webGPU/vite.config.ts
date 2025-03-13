@@ -1,6 +1,17 @@
 import { defineConfig } from 'vite';
 
+function getBase() {
+    // GitHub Pages
+    if (process.env.GITHUB_PAGES === 'true') {
+        return '/context2DToGPUTex/';
+    }
+    
+    // Local development or preview
+    return './';
+}
+
 export default defineConfig({
+    base: getBase(),
     assetsInclude: ['**/*.wgsl'],
     server: {
         https: false, // Set to true if you need HTTPS
