@@ -11,7 +11,6 @@ export class Renderer {
     private context!: GPUCanvasContext;
     private pipeline!: GPURenderPipeline;
     private sampler!: GPUSampler;
-    private vertexBuffer!: GPUBuffer;
     private bindGroup!: GPUBindGroup;
     private texture!: GPUTexture;
     private textureView!: GPUTextureView;
@@ -85,22 +84,6 @@ export class Renderer {
             minFilter: 'linear',
         });
 
-        // Create vertex buffer
-        const vertices = new Float32Array([
-            -1.0, -1.0,  // Bottom left
-             1.0, -1.0,  // Bottom right
-            -1.0,  1.0,  // Top left
-             1.0,  1.0   // Top right
-        ]);
-
-        this.vertexBuffer = this.device.createBuffer({
-            size: vertices.byteLength,
-            usage: GPUBufferUsage.VERTEX,
-            mappedAtCreation: true,
-        });
-        new Float32Array(this.vertexBuffer.getMappedRange()).set(vertices);
-        this.vertexBuffer.unmap();
-
         // Create pipeline
         this.pipeline = this.device.createRenderPipeline({
             layout: 'auto',
@@ -108,15 +91,7 @@ export class Renderer {
                 module: this.device.createShaderModule({
                     code: vertexShaderSource,
                 }),
-                entryPoint: 'main',
-                buffers: [{
-                    arrayStride: 8,
-                    attributes: [{
-                        shaderLocation: 0,
-                        offset: 0,
-                        format: 'float32x2',
-                    }],
-                }],
+                entryPoint: 'main'
             },
             fragment: {
                 module: this.device.createShaderModule({
@@ -274,7 +249,6 @@ export class Renderer {
         // Draw the quad
         renderPass.setPipeline(this.pipeline);
         renderPass.setBindGroup(0, this.bindGroup);
-        renderPass.setVertexBuffer(0, this.vertexBuffer);
         renderPass.draw(4, 1, 0, 0);
         renderPass.end();
 
