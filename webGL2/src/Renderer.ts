@@ -297,18 +297,17 @@ export class Renderer {
         
         // Remove timestamps older than 1 second
         const oneSecondAgo = currentTime - 1000;
-        while (this.frameTimestamps[0] < oneSecondAgo) {
+        while (this.frameTimestamps.length > 0 && this.frameTimestamps[0] < oneSecondAgo) {
             this.frameTimestamps.shift();
         }
         
-        // Calculate average FPS over the last second
-        if (this.frameTimestamps.length > 1) {
-            const timeSpan = this.frameTimestamps[this.frameTimestamps.length - 1] - this.frameTimestamps[0];
-            const fps = Math.round((this.frameTimestamps.length - 1) * 1000 / timeSpan);
+        // Update FPS display only once per second
+        if (currentTime - this.lastFrameTime >= 1000) {
+            // Calculate average FPS over the last second
+            const fps = this.frameTimestamps.length;
             this.onFPSUpdate(fps);
+            this.lastFrameTime = currentTime;
         }
-        
-        this.lastFrameTime = currentTime;
     }
 
     public start(): void {
