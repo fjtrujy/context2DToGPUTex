@@ -1,101 +1,107 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/context2DToGPUTex/webgl2.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Context2D to WebGPU Texture</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Context2D to GPU Texture Demos</title>
     <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: #000;
-      }
-      body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-      canvas {
-        background: #000;
-        max-width: 100vw;
-        max-height: 100vh;
-        width: auto;
-        height: auto;
-        object-fit: contain;
-      }
-      #controls {
-        position: fixed;
-        top: 5px;
-        left: 5px;
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        background-color: rgba(0, 0, 0, 0.7);
-        padding: 5px;
-        border-radius: 4px;
-        z-index: 1000;
-      }
-      #fps {
-        color: white;
-        font-family: monospace;
-        margin: 0;
-      }
-      .button {
-        padding: 4px 12px;
-        font-family: monospace;
-        font-size: 14px;
-        color: white;
-        background-color: #a41e22;
-        border: 2px solid white;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.3s;
-      }
-      .button:hover {
-        background-color: #c42428;
-      }
-      #contextType {
-        color: white;
-        font-family: monospace;
-        margin: 0;
-      }
-      #webgpuError {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background-color: rgba(164, 30, 34, 0.9);
-        color: white;
-        padding: 20px;
-        border-radius: 8px;
-        font-family: monospace;
-        text-align: center;
-        display: none;
-      }
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #ffffff;
+            margin-bottom: 40px;
+        }
+
+        .demos {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .demo-card {
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 20px;
+            width: 300px;
+            transition: transform 0.2s;
+        }
+
+        .demo-card:hover {
+            transform: translateY(-5px);
+        }
+
+        h2 {
+            color: #ffffff;
+            margin-top: 0;
+        }
+
+        p {
+            color: #cccccc;
+            line-height: 1.5;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #a41e22;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 15px;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background: #c42428;
+        }
+
+        .warning {
+            background: rgba(164, 30, 34, 0.2);
+            border: 1px solid #a41e22;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
     </style>
-    <script type="module" crossorigin src="/context2DToGPUTex/assets/index-BmsnbaFr.js"></script>
-  </head>
-  <body>
-    <div id="controls">
-      <div id="fps">FPS: 0</div>
-      <div id="contextType">Mode: 2x HTMLCanvas</div>
-      <button id="toggleButton" class="button">Stop</button>
-      <button id="contextToggle" class="button">Next Mode</button>
+</head>
+<body>
+    <div class="container">
+        <h1>Context2D to GPU Texture Demos</h1>
+        
+        <div class="demos">
+            <div class="demo-card">
+                <h2>WebGL2 Demo</h2>
+                <p>Implementation using WebGL2 for GPU texture rendering. Works in most modern browsers.</p>
+                <a href="webgl2/" class="button">Launch WebGL2 Demo</a>
+            </div>
+
+            <div class="demo-card">
+                <h2>WebGPU Demo</h2>
+                <p>Implementation using the new WebGPU API for modern GPU access.</p>
+                <a href="webgpu/" class="button">Launch WebGPU Demo</a>
+                <div class="warning">
+                    Requires Chrome/Edge 113+ or Firefox Nightly with WebGPU enabled
+                </div>
+            </div>
+        </div>
     </div>
-    <div id="webgpuError">
-      WebGPU is not supported in your browser.<br>
-      Please use Chrome/Edge 113+ or Firefox Nightly with WebGPU enabled.
-    </div>
-    <script>
-      // Check WebGPU support before loading the main script
-      if (!navigator.gpu) {
-        document.getElementById('webgpuError').style.display = 'block';
-        document.getElementById('controls').style.display = 'none';
-      }
-    </script>
-  </body>
-</html>
+</body>
+</html> 

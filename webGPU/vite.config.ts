@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 function getBase() {
     // GitHub Pages
     if (process.env.GITHUB_PAGES === 'true') {
-        return '/context2DToGPUTex/';
+        return '/context2DToGPUTex/webgpu/';
     }
     
     // Local development or preview
@@ -14,7 +14,7 @@ export default defineConfig({
     base: getBase(),
     assetsInclude: ['**/*.wgsl'],
     server: {
-        https: false, // Set to true if you need HTTPS
+        https: undefined, // Set to true if you need HTTPS
         host: true, // Expose to all network interfaces
         headers: {
             'Cross-Origin-Opener-Policy': 'same-origin',

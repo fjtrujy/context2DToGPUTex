@@ -1,0 +1,93 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get WebGL2 yarn cache directory path
+        id: webgl2-yarn-cache-dir-path
+        run: echo "dir=$(cd webGL2 && yarn cache dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache WebGL2 yarn cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.webgl2-yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-webgl2-${{ hashFiles('webGL2/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-webgl2-
+
+      - name: Get WebGPU yarn cache directory path
+        id: webgpu-yarn-cache-dir-path
+        run: echo "dir=$(cd webGPU && yarn cache dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache WebGPU yarn cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.webgpu-yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-webgpu-${{ hashFiles('webGPU/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-webgpu-
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Install dependencies WebGL2
+        working-directory: ./webGL2
+        run: yarn install --frozen-lockfile
+
+      - name: Build WebGL2
+        working-directory: ./webGL2
+        run: yarn build:github
+
+      - name: Install dependencies WebGPU
+        working-directory: ./webGPU
+        run: yarn install --frozen-lockfile
+
+      - name: Build WebGPU
+        working-directory: ./webGPU
+        run: yarn build:github
+
+      - name: Prepare deployment
+        run: |
+          mkdir -p ./docs/webgl2
+          mkdir -p ./docs/webgpu
+          cp -r ./webGL2/dist/* ./docs/webgl2/
+          cp -r ./webGPU/dist/* ./docs/webgpu/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 
