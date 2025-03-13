@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/webgl2.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Context2D to WebGPU Texture</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      canvas {
+        background: #000;
+        max-width: 100vw;
+        max-height: 100vh;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+      }
+      #controls {
+        position: fixed;
+        top: 5px;
+        left: 5px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        background-color: rgba(0, 0, 0, 0.7);
+        padding: 5px;
+        border-radius: 4px;
+        z-index: 1000;
+      }
+      #fps {
+        color: white;
+        font-family: monospace;
+        margin: 0;
+      }
+      .button {
+        padding: 4px 12px;
+        font-family: monospace;
+        font-size: 14px;
+        color: white;
+        background-color: #a41e22;
+        border: 2px solid white;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      .button:hover {
+        background-color: #c42428;
+      }
+      #contextType {
+        color: white;
+        font-family: monospace;
+        margin: 0;
+      }
+      #webgpuError {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(164, 30, 34, 0.9);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        font-family: monospace;
+        text-align: center;
+        display: none;
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-BmsnbaFr.js"></script>
+  </head>
+  <body>
+    <div id="controls">
+      <div id="fps">FPS: 0</div>
+      <div id="contextType">Mode: 2x HTMLCanvas</div>
+      <button id="toggleButton" class="button">Stop</button>
+      <button id="contextToggle" class="button">Next Mode</button>
+    </div>
+    <div id="webgpuError">
+      WebGPU is not supported in your browser.<br>
+      Please use Chrome/Edge 113+ or Firefox Nightly with WebGPU enabled.
+    </div>
+    <script>
+      // Check WebGPU support before loading the main script
+      if (!navigator.gpu) {
+        document.getElementById('webgpuError').style.display = 'block';
+        document.getElementById('controls').style.display = 'none';
+      }
+    </script>
+  </body>
+</html>
