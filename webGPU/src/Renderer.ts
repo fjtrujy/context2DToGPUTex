@@ -52,7 +52,7 @@ export class Renderer {
         return renderer;
     }
 
-    private async initializeWebGPU(canvas: HTMLCanvasElement): Promise<void> {
+    private async initializeWebGPU(canvas: HTMLCanvasElement | OffscreenCanvas): Promise<void> {
         if (!navigator.gpu) {
             throw new Error('WebGPU not supported');
         }
@@ -192,12 +192,15 @@ export class Renderer {
 
                 // Create WebGPU offscreen canvas
                 this.offscreenWebGPU = new OffscreenCanvas(this.displaySize.width, this.displaySize.height);
-                await this.initializeWebGPU(this.visibleCanvas);
-
-                // Setup bitmap renderer on the visible canvas
+                
+                // Setup bitmap renderer on the visible canvas first
                 const bitmapRenderer = this.visibleCanvas.getContext('bitmaprenderer');
                 if (!bitmapRenderer) throw new Error('BitmapRenderer not supported');
                 this.bitmapRenderer = bitmapRenderer;
+
+                // Initialize WebGPU on the offscreen canvas
+                if (!this.offscreenWebGPU) throw new Error('Offscreen WebGPU canvas not created');
+                await this.initializeWebGPU(this.offscreenWebGPU);
                 break;
             }
         }
