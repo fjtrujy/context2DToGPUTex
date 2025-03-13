@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/webgl2.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Context2D to WebGL2 Texture</title>
+    <title>Context2D to WebGPU Texture</title>
     <style>
       html, body {
         margin: 0;
@@ -63,6 +63,19 @@
         font-family: monospace;
         margin: 0;
       }
+      #webgpuError {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(164, 30, 34, 0.9);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        font-family: monospace;
+        text-align: center;
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -72,6 +85,17 @@
       <button id="toggleButton" class="button">Stop</button>
       <button id="contextToggle" class="button">Next Mode</button>
     </div>
+    <div id="webgpuError">
+      WebGPU is not supported in your browser.<br>
+      Please use Chrome/Edge 113+ or Firefox Nightly with WebGPU enabled.
+    </div>
+    <script>
+      // Check WebGPU support before loading the main script
+      if (!navigator.gpu) {
+        document.getElementById('webgpuError').style.display = 'block';
+        document.getElementById('controls').style.display = 'none';
+      }
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -374,3 +374,6 @@ export class Renderer {
         return this.isRunning;
     }
 }
+
+console.log('GPU:', navigator.gpu);
+console.log('User Agent:', navigator.userAgent);
